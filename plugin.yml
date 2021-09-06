@@ -1,0 +1,6 @@
+main: me.cuv.ffa.main
+version: 2.0
+name: FreeForAll
+commands:
+  ffa:
+    description: The main ffa command.
