@@ -8,11 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -28,8 +25,12 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -341,6 +342,17 @@ public class main extends JavaPlugin implements Listener {
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player player = (Player)sender;
+        if (command.getName().equalsIgnoreCase("spawn")){
+            int x = this.yamlFile.getInt("join.x");
+            int y = this.yamlFile.getInt("join.y");
+            int z = this.yamlFile.getInt("join.z");
+            int yaw = this.yamlFile.getInt("join.yaw");
+            int pitch = this.yamlFile.getInt("join.pitch");
+
+            Location loc = new Location(Bukkit.getWorld(this.yamlFile.getString("join.world")), (double)x + 0.5D, (double)y + 0.5D, (double)z + 0.5D, (float)yaw, (float)pitch);
+            player.teleport(loc);
+        }
+
         if (command.getName().equalsIgnoreCase("ffa")) {
             if (args.length == 1) {
                 if (args[0].equalsIgnoreCase("help")) {
@@ -409,6 +421,8 @@ public class main extends JavaPlugin implements Listener {
                             player.getInventory().clear();
                             player.getInventory().setContents(inventory);
                             player.getInventory().setArmorContents(armor);
+                            player.setHealth(20);
+                            player.setFoodLevel(20);
                             x = this.yamlFile.getInt("join.x");
                             y = this.yamlFile.getInt("join.y");
                             z = this.yamlFile.getInt("join.z");
@@ -728,7 +742,9 @@ public class main extends JavaPlugin implements Listener {
         if (e.getEntity() instanceof Player) {
             Player player = (Player) e.getEntity();
             if (this.ingame.contains(player.getName())) {
-                e.setCancelled(true); // Permet d'enlever les dégats de chute dans la partie
+                if (e.getCause() == EntityDamageEvent.DamageCause.FALL) {
+                    e.setCancelled(true); // Permet d'enlever les dégats de chute dans la partie
+                }
             }
         }
     }
@@ -854,6 +870,36 @@ public class main extends JavaPlugin implements Listener {
             this.openKits(player);
         }
 
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event){
+        if (this.ingame.contains(event.getEntity().getName())){
+            event.getDrops().clear();
+            for (String player : this.ingame ) {
+                Bukkit.getPlayer(player).sendMessage(event.getEntity().getDisplayName() + this.getConfig().getString("PlayerDeath"));
+            }
+        }
+    }
+
+    @EventHandler
+    public void onDropEvent(PlayerDropItemEvent e){
+        if (this.ingame.contains(e.getPlayer().getName())) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPick(EntityPickupItemEvent e) {
+        if (this.ingame.contains(e.getEntity().getName())){
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDisconnection(PlayerQuitEvent event){
+        Player player = event.getPlayer();
+        this.ingame.remove(player.getName());
     }
 
 }

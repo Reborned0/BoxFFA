@@ -23,6 +23,8 @@ AlreadyInFFA: '&c&lYou are already in the FFA'
 
 NotInFFA: '&c&lYou are not in the FFA'
 
+PlayerDeath: '&c&lis dead'
+
 ########################################
 #
 #                  Kits
